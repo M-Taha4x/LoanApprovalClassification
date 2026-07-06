@@ -1,0 +1,5 @@
+numpy
+pandas
+jupyter lab
+sckit learn
+matplot lib
