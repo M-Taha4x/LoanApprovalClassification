@@ -1,5 +1,8 @@
-numpy
-pandas
-jupyter lab
-sckit learn
-matplot lib
+Python
+Numpy
+Pandas
+Jupyter lab
+Sckit-learn
+Matplotlib
+Seaborn
+Streamlit
