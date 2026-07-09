@@ -1,31 +1,28 @@
 import streamlit as st
-import joblib
-import pandas as pd
-df=pd.read_csv(r"D:\ML_Projects\LoanStatusApproval\data\loan_data.csv")
-st.sidebar.title("Loan Status Approval")
-st.sidebar.write(""" 
-    Model:
-    Random Forest Classifier
-    
-    Developer:
-    Muhammad Taha
-    
-    University:
-    GIKI
-""")
 st.set_page_config(
     page_title="Loan Status Approval",
     layout="centered"
 )
+import joblib
+import numpy as np
+import pandas as pd
 model=joblib.load(r"D:\ML_Projects\LoanStatusApproval\model\randomforest.pkl")
 scaler=joblib.load(r"D:\ML_Projects\LoanStatusApproval\model\scaler.pkl")
+df=pd.read_csv(r"D:\ML_Projects\LoanStatusApproval\data\loan_data.csv")
+st.sidebar.title("Loan Status Approval")
+st.sidebar.header("Project Info")
+st.sidebar.success("Random Forest Classifier")
+st.sidebar.write("Muhammad Taha")
+st.sidebar.write("GIKI")
+
+
 st.markdown(""" 
     <h1 style='text-align:center;color:#4CAF50'>
     Loan Status Approval
     </h1>
     """,unsafe_allow_html=True)
 st.markdown("""
-    <h3 style='text-allign:centre;color:gray;'>
+    <h3 style='text-align:centre;color:gray;'>
     Predicts Loan's Approval(Accepted or Rejected) using ML
     </h3>
      """,unsafe_allow_html=True)
@@ -41,10 +38,10 @@ with tab1:
             "Gender",["Male","Female"]
         )
         education=st.selectbox(
-            "Education",["Bachelor","Associate","High School","Master","Doctorate"]
+            "Education",["Bachelors","Associate","High School","Master","Doctorate"]
         )
         owner_ship=st.selectbox(
-            "Home OwnerShip",["Rent","Own","Mortgage","Other"]
+            "Home Ownership",["Rent","Own","Mortgage","Other"]
         )
         intent=st.selectbox(
             "Loan Intent",["Education","Medical","Venture","Personal","Debtconsolidation","HomeImprovement"]
@@ -53,15 +50,15 @@ with tab1:
             "Previous Loan Defaults",["Yes","No"]
         )
     with col2:
-        age=st.number_input("Person Age",min_value=20,max_value=140)
-        income=st.number_input("Person Income",min_value=8.98,max_value=15.78)
-        emp_exp=st.number_input("Person Emp Exp",min_value=0,max_value=125)
-        loan_amt=st.number_input("Loan Amount",min_value=500,max_value=35000)
+        age=st.number_input(" Age",min_value=20,max_value=140,value=20)
+        income=st.number_input(" Income",min_value=1000,max_value=1000000,value=25000)
+        emp_exp=st.number_input("Employment Experience",min_value=0,max_value=125,value=0)
+        loan_amt=st.number_input("Loan Amount",min_value=500,max_value=35000,value=500)
     with col3:
-        loan_int=st.number_input("Loan Interest Rate",min_value=5.42,max_value=20)
-        loan_per_inc=st.number_input("Loan Percent Income",min_value=0,max_value=0.66)
-        cb_len=st.number_input("Credit History Length",min_value=2,max_value=30)
-        crd_score=st.number_input("Credit Score",min_value=390,max_value=850)
+        loan_int=st.number_input(" Interest Rate",min_value=5.42,max_value=20.0,value=5.42)
+        loan_per_inc=st.number_input("Loan Percent Income",min_value=0.0,max_value=0.66,value=0.0)
+        cb_len=st.number_input("Credit History Length",min_value=2,max_value=30,value=2)
+        crd_score=st.number_input("Credit Score",min_value=390,max_value=850,value=390)
     st.divider()
     if st.button("Predict Loan Approval Status",use_container_width=True):
         gender_map={
@@ -90,8 +87,8 @@ with tab1:
             "Education":(0,1,0,0,0,0),
             "Venture":(0,0,1,0,0,0),
             "Medical":(0,0,0,1,0,0),
-            "Home Improvement":(0,0,0,0,1,0),
-            "Debt Consolidation":(0,0,0,0,0,1)
+            "HomeImprovement":(0,0,0,0,1,0),
+            "Debtconsolidation":(0,0,0,0,0,1)
         }
         gender=gender_map[gender]
         prev_loan=pre_loan_map[prev_loan]
@@ -125,31 +122,52 @@ with tab1:
            'person_education_High School':[edu_hs], 
            'person_education_Master':[edu_ms]
         })
+        sample["person_income"]=np.log1p(sample["person_income"])
+        num_col=[
+            "person_age",
+            "person_income",
+            "person_emp_exp",
+            "loan_amnt",
+            "loan_int_rate",
+            "loan_percent_income",
+            "cb_person_cred_hist_length",
+            "credit_score"
+        ]
+        sample[num_col]=scaler.transform(sample[num_col])
+        col1,col2,col3=st.columns(3)
+        st.write(sample)
         with st.spinner("Predicting Loan Approval Status"):
             prediction=model.predict(sample)
+            probability = model.predict_proba(sample)
         pred_score=prediction[0]
-        probability = model.predict_proba(sample)
+        st.write(probability)
         if pred_score==1:
-            st.metric("Loan Approved ",f"Probabilit of Approval: {probability[0][1]}")
+            st.success("Loan Approved")
+            st.metric("Approval Probability ",f"{probability[0][1]*100:.2f}%")
+            st.progress(float(probability[0][1]))
             st.balloons()
         else:
-            st.metric("Loan Rejected",f"Probability of Rejection: {probability[0][0]}")
-            st.balloons()
+            st.error("Loan Rejected")
+            st.metric(
+                "Rejection Probability ",f"{probability[0][0]*100:.2f}%"
+            )
+            st.progress(float(probability[0][0]))
+        
 with tab2:
     st.header("Dataset Information")
-    show_df=st.checkbox("Dataset")
-    if show_df:
+    st.dataframe(df.head())
+    if st.checkbox("Show Complete Dataset"):
         st.dataframe(df)
-    st.write(" Dataset Source: Kaggle")
+    st.markdown("[Source](https://www.kaggle.com/datasets/taweilo/loan-approval-classification-data)")
     st.write("Number of Rows:45000")
     st.write("Number of Columns: 14")
     st.write("Taget Variable: Loan_Status")
 with tab3:
-    col4,col5=st.columns(2)
     st.header("About This Project")
     st.subheader("Technologies Used")
+    col4,col5=st.columns(2)
     with col4:
-        st.write("Pyhthon")
+        st.write("Python")
         st.write("Pandas")
         st.write("Numpy")
         st.write("Seaborn")
@@ -173,12 +191,31 @@ with tab3:
     st.write("Muhammad Taha")
     st.subheader("University")
     st.write("GIKI")
-    st.success("Thank you for using this Application")
+    st.subheader("Model Performance")
+
+    col1,col2=st.columns(2)
+
+    with col1:
+        st.metric("Accuracy","92.72%")
+        st.metric("Precision","88.99%")
+
+    with col2:
+        st.metric("Recall","77.02%")
+        st.metric("ROC-AUC","87.14%")
+        st.success("Thank you for using this Application")
 with tab4:
-    st.header("About Myself")
-    st.write("""Hello myself Taha From Pakistan,
-             - currently pursuing BS AI(4th sem) from GIKI,
-             -its my third ml model which I worked on.
-             - 
+    st.header("About Me")
+    st.write("""Muhammad Taha
+
+         BS Artificial Intelligence
+        Ghulam Ishaq Khan Institute (GIKI)
+
+    • Machine Learning
+    • Data Science
+    • Python
+    • Streamlit
              """)
+    st.markdown(
+        "[GitHub Profile](https://github.com/M-Taha4x)"
+    )
         
