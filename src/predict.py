@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import joblib
+df=pd.read_csv("D:\ML_Projects\LoanStatusApproval\data\loan_data.csv")
 model=joblib.load(r"D:\ML_Projects\LoanStatusApproval\model\randomforest.pkl")
 scaler=joblib.load(r"D:\ML_Projects\LoanStatusApproval\model\scaler.pkl")
 sample=pd.DataFrame(
@@ -53,7 +54,8 @@ else:
     print("Loan Rejected")
 probability = model.predict_proba(sample)
 
-probability = model.predict_proba(sample)
+approved=df[df['loan_status']==1]
+print(approved.head())
 
 print(f"Probability of Rejection : {probability[0][0]*100:.2f}%")
 print(f"Probability of Approval  : {probability[0][1]*100:.2f}%")
